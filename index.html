@@ -1444,6 +1444,100 @@
       justify-self: stretch;
     }
 
+    .career-warhaven-card {
+      width: min(100%, 382px);
+      display: block;
+      overflow: hidden;
+      align-self: start;
+      justify-self: end;
+      color: #fff;
+      background: #07111e;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 4px;
+      box-shadow: 0 18px 36px rgba(0, 0, 0, .28);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+      isolation: isolate;
+    }
+
+    .career-warhaven-card:hover,
+    .career-warhaven-card:focus-visible {
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 22px 42px rgba(0, 0, 0, .34);
+      transform: translateY(-2px);
+      outline: 0;
+    }
+
+    .career-warhaven-card-frame {
+      position: relative;
+      display: block;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .career-warhaven-card-frame > img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 0;
+    }
+
+    .career-warhaven-card-notion {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      z-index: 2;
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+    }
+
+    .career-warhaven-card-notion img {
+      position: static;
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      opacity: .94;
+    }
+
+    .career-warhaven-card-meta {
+      display: block;
+      padding: 12px 14px 14px;
+      background: #07111e;
+    }
+
+    .career-warhaven-card-meta strong {
+      display: block;
+      margin-bottom: 10px;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .career-warhaven-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .career-warhaven-card-tags span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 9px;
+      color: #dce6ef;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
     .career-resume-card,
     .career-info-card {
       display: grid;
@@ -1458,6 +1552,11 @@
 
     .career-resume-card {
       border-radius: 0 0 34px 34px;
+    }
+
+    .career-resume-card--warhaven {
+      grid-template-columns: 230px minmax(0, 1fr) minmax(300px, 382px);
+      align-items: start;
     }
 
     .career-resume-meta strong {
@@ -1894,6 +1993,16 @@
       .career-image-row img[alt="ArcheAge Begins"] {
         width: 150px;
         justify-self: start;
+      }
+
+      .career-warhaven-card {
+        width: min(100%, 382px);
+        justify-self: end;
+      }
+
+      .career-warhaven-card:hover,
+      .career-warhaven-card:focus-visible {
+        transform: translateY(-2px);
       }
 
       .career-resume-card,
@@ -2575,8 +2684,8 @@
     const snapSections = ["#demo", "#projects", "#learning", "#about", "#creative-stack"]
       .map((selector) => document.querySelector(selector))
       .filter(Boolean);
-    let isSectionSnapping = false;
-    const wheelStepSize = 180;
+    let targetSnapIndex = null;
+    const wheelStepSize = 72;
     const maxStepPerWheel = 2;
     let wheelBuffer = 0;
 
@@ -2615,7 +2724,7 @@
       }, null)?.index ?? 0;
     }
 
-    function animateScrollTo(targetTop, duration = 320) {
+    function animateScrollTo(targetTop, duration = 140) {
       if (animateScrollTo.frameId) {
         cancelAnimationFrame(animateScrollTo.frameId);
       }
@@ -2636,22 +2745,22 @@
     }
 
     function scrollToSnapSection(index) {
-      const target = snapSections[Math.max(0, Math.min(index, snapSections.length - 1))];
+      targetSnapIndex = Math.max(0, Math.min(index, snapSections.length - 1));
+      const target = snapSections[targetSnapIndex];
       if (!target) return;
-      isSectionSnapping = true;
       const headerHeight = header?.offsetHeight || 64;
       const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
       animateScrollTo(Math.max(0, targetTop));
       window.setTimeout(() => {
-        isSectionSnapping = false;
+        targetSnapIndex = null;
         syncActiveNav();
-      }, 50);
+      }, 160);
     }
 
     window.addEventListener("wheel", (event) => {
       if (!snapSections.length) return;
       if (event.target.closest(".career-panel, .reel-showcase")) return;
-      if (Math.abs(event.deltaY) < 10 || isSectionSnapping) {
+      if (Math.abs(event.deltaY) < 10) {
         event.preventDefault();
         return;
       }
@@ -2665,7 +2774,7 @@
       }
       wheelBuffer = 0;
 
-      const currentIndex = getCurrentSnapIndex();
+      const currentIndex = targetSnapIndex ?? getCurrentSnapIndex();
       const nextIndex = currentIndex + clampedSteps;
       if (nextIndex < 0 || nextIndex >= snapSections.length) {
         return;
@@ -2998,7 +3107,7 @@ function closeCareer() {
         ${image("로보타.png", "Robota prototype")}
       </div>
 
-      <article class="career-resume-card">
+      <article class="career-resume-card career-resume-card--warhaven">
         <div class="career-resume-meta">
           <strong>2022.01 - 재직 중</strong>
           <span>넥슨 코리아</span>
@@ -3021,6 +3130,21 @@ function closeCareer() {
             <li>AI 활용 사운드 작업 방법 연구, Synth 기반 로봇 레트로 사운드 작업</li>
           </ul>
         </div>
+        <a class="career-warhaven-card" href="https://jeonhoon.notion.site/warhaven-portforio" target="_blank" rel="noopener noreferrer">
+          <span class="career-warhaven-card-frame">
+            <img src="assets/워헤이븐 기술포폴.png" alt="워헤이븐 프로젝트 기술 포트폴리오" loading="lazy">
+            <span class="career-warhaven-card-notion" aria-hidden="true"><img src="assets/icon-notion.png" alt=""></span>
+          </span>
+          <span class="career-warhaven-card-meta">
+            <strong>워헤이븐 프로젝트 기술 포트폴리오</strong>
+            <span class="career-warhaven-card-tags">
+              <span>2022~2024</span>
+              <span>Implementation</span>
+              <span>Tone &amp; manner</span>
+              <span>Combat</span>
+            </span>
+          </span>
+        </a>
       </article>
 
       <div class="career-image-row cols-4 compact">

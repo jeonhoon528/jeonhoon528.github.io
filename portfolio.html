@@ -1062,12 +1062,12 @@
 
     const navLinks = Array.from(document.querySelectorAll(".nav-links a"));
     const portfolioSections = Array.from(document.querySelectorAll(".portfolio-section:not([hidden])"));
-    let isSectionSnapping = false;
-    const wheelStepSize = 180;
+    let targetSectionIndex = null;
+    const wheelStepSize = 72;
     const maxStepPerWheel = 2;
     let wheelBuffer = 0;
 
-    function animateScrollTo(targetTop, duration = 320) {
+    function animateScrollTo(targetTop, duration = 140) {
       if (animateScrollTo.frameId) {
         cancelAnimationFrame(animateScrollTo.frameId);
       }
@@ -1171,28 +1171,37 @@
     }
 
     function scrollToPortfolioSection(index) {
-      const target = portfolioSections[Math.max(0, Math.min(index, portfolioSections.length - 1))];
+      targetSectionIndex = Math.max(0, Math.min(index, portfolioSections.length - 1));
+      const target = portfolioSections[targetSectionIndex];
       if (!target) return;
-      isSectionSnapping = true;
       const headerHeight = header?.offsetHeight || 64;
       const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
       animateScrollTo(Math.max(0, targetTop));
       window.setTimeout(() => {
-        isSectionSnapping = false;
+        targetSectionIndex = null;
         syncActiveNav();
-      }, 50);
+      }, 160);
     }
 
     window.addEventListener("wheel", (event) => {
       if (!portfolioSections.length) return;
       if (event.target.closest(".reel-showcase")) return;
-      if (Math.abs(event.deltaY) < 10 || isSectionSnapping) {
+      if (Math.abs(event.deltaY) < 10) {
         event.preventDefault();
         return;
       }
 
-      const currentIndex = getCurrentSectionIndex();
-      const nextIndex = currentIndex + (event.deltaY > 0 ? 1 : -1);
+      wheelBuffer += event.deltaY;
+      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
+      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
+      if (clampedSteps === 0) {
+        event.preventDefault();
+        return;
+      }
+      wheelBuffer = 0;
+
+      const currentIndex = targetSectionIndex ?? getCurrentSectionIndex();
+      const nextIndex = currentIndex + clampedSteps;
       if (nextIndex < 0 || nextIndex >= portfolioSections.length) {
         return;
       }
@@ -1201,75 +1210,5 @@
       scrollToPortfolioSection(nextIndex);
     }, { passive: false });
   </script>
-<script>
-  (() => {
-    const header = document.querySelector(".site-header");
-    const sections = Array.from(document.querySelectorAll(".portfolio-section:not([hidden])"));
-    const wheelStepSize = 180;
-    const maxStepPerWheel = 2;
-    let wheelBuffer = 0;
-    let isLocked = false;
-    let frameId = null;
-
-    function getCurrentIndex() {
-      return sections.reduce((active, section, index) => {
-        const rect = section.getBoundingClientRect();
-        const distance = Math.abs(rect.top - 72);
-        if (!active || distance < active.distance) {
-          return { index, distance };
-        }
-        return active;
-      }, null)?.index ?? 0;
-    }
-
-    function animateTo(top, duration = 320) {
-      if (frameId) cancelAnimationFrame(frameId);
-      const startTop = window.scrollY;
-      const distance = top - startTop;
-      const startTime = performance.now();
-      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-      function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
-        if (progress < 1) {
-          frameId = requestAnimationFrame(step);
-        }
-      }
-
-      frameId = requestAnimationFrame(step);
-    }
-
-    function scrollToSection(index) {
-      const target = sections[Math.max(0, Math.min(index, sections.length - 1))];
-      if (!target) return;
-      isLocked = true;
-      const headerHeight = header?.offsetHeight || 64;
-      const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-      animateTo(Math.max(0, targetTop));
-      window.setTimeout(() => {
-        isLocked = false;
-      }, 50);
-    }
-
-    window.addEventListener("wheel", (event) => {
-      if (!sections.length) return;
-      if (event.target.closest(".reel-showcase")) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (Math.abs(event.deltaY) < 10 || isLocked) return;
-
-      wheelBuffer += event.deltaY;
-      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
-      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
-      if (clampedSteps === 0) return;
-      wheelBuffer = 0;
-
-      const nextIndex = getCurrentIndex() + clampedSteps;
-      if (nextIndex < 0 || nextIndex >= sections.length) return;
-      scrollToSection(nextIndex);
-    }, { capture: true, passive: false });
-  })();
-</script>
 </body>
 </html>
