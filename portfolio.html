@@ -1063,11 +1063,52 @@
     const navLinks = Array.from(document.querySelectorAll(".nav-links a"));
     const portfolioSections = Array.from(document.querySelectorAll(".portfolio-section:not([hidden])"));
     let isSectionSnapping = false;
+    const wheelStepSize = 180;
+    const maxStepPerWheel = 2;
+    let wheelBuffer = 0;
+
+    function animateScrollTo(targetTop, duration = 320) {
+      if (animateScrollTo.frameId) {
+        cancelAnimationFrame(animateScrollTo.frameId);
+      }
+      const startTop = window.scrollY;
+      const distance = targetTop - startTop;
+      const startTime = performance.now();
+      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+      function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
+        if (progress < 1) {
+          animateScrollTo.frameId = requestAnimationFrame(step);
+        }
+      }
+
+      animateScrollTo.frameId = requestAnimationFrame(step);
+    }
 
     const recentGrid = document.querySelector("#personal-2022-2026 .reel-grid");
     const valhallaCard = document.querySelector("#personal-2016-2022 .video-card[data-video='ouDMPZsXMMk']");
     if (recentGrid && valhallaCard) {
       recentGrid.appendChild(valhallaCard);
+    }
+
+    const vivyPortfolioCard = recentGrid?.querySelector(".video-card[data-video='F3lNKCKbV18']");
+    if (recentGrid && vivyPortfolioCard && !recentGrid.querySelector(".video-card[data-video='wfXeLCVM1jU']")) {
+      vivyPortfolioCard.insertAdjacentHTML("beforebegin", `
+        <article class="video-card" tabindex="0" role="button" data-video="wfXeLCVM1jU" data-title="스타레일 스킬 리디자인" data-tags="2026.06,SFX,Synthesizing,SubCulture" data-description="- Kilohearts - Phase Plant 모듈식 신디사이저를 적극 활용한 리디자인&#10;- 기존 신디를 활용한 디자인 포트폴리오가 없어서 적극적으로 활용하여 작업 진행." data-link="https://youtu.be/j4POSc1YeAo?si=RXFOkn2fnAjXl6Lb">
+          <div class="video-frame"><img src="https://img.youtube.com/vi/wfXeLCVM1jU/hqdefault.jpg" alt="스타레일 스킬 리디자인"></div>
+          <div class="video-meta"><strong>스타레일 스킬 리디자인</strong><div class="card-tags"><span>2026.06</span><span>SFX</span><span>Synthesizing</span><span>SubCulture</span></div></div>
+        </article>
+      `);
+      const starRailPortfolioCard = recentGrid.querySelector(".video-card[data-video='wfXeLCVM1jU']");
+      starRailPortfolioCard?.addEventListener("click", () => openReel(starRailPortfolioCard));
+      starRailPortfolioCard?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openReel(starRailPortfolioCard);
+        }
+      });
     }
 
     const featuredVideoIds = new Set([
@@ -1077,6 +1118,7 @@
       "ouDMPZsXMMk",
       "q8ia_bmtQbk",
       "UOyXOPzXLCk",
+      "wfXeLCVM1jU",
       "F3lNKCKbV18",
       "vhVLFamdRqc",
       "UYjxlb0pB0E",
@@ -1134,11 +1176,11 @@
       isSectionSnapping = true;
       const headerHeight = header?.offsetHeight || 64;
       const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-      window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+      animateScrollTo(Math.max(0, targetTop));
       window.setTimeout(() => {
         isSectionSnapping = false;
         syncActiveNav();
-      }, 760);
+      }, 50);
     }
 
     window.addEventListener("wheel", (event) => {
@@ -1159,5 +1201,75 @@
       scrollToPortfolioSection(nextIndex);
     }, { passive: false });
   </script>
+<script>
+  (() => {
+    const header = document.querySelector(".site-header");
+    const sections = Array.from(document.querySelectorAll(".portfolio-section:not([hidden])"));
+    const wheelStepSize = 180;
+    const maxStepPerWheel = 2;
+    let wheelBuffer = 0;
+    let isLocked = false;
+    let frameId = null;
+
+    function getCurrentIndex() {
+      return sections.reduce((active, section, index) => {
+        const rect = section.getBoundingClientRect();
+        const distance = Math.abs(rect.top - 72);
+        if (!active || distance < active.distance) {
+          return { index, distance };
+        }
+        return active;
+      }, null)?.index ?? 0;
+    }
+
+    function animateTo(top, duration = 320) {
+      if (frameId) cancelAnimationFrame(frameId);
+      const startTop = window.scrollY;
+      const distance = top - startTop;
+      const startTime = performance.now();
+      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+      function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
+        if (progress < 1) {
+          frameId = requestAnimationFrame(step);
+        }
+      }
+
+      frameId = requestAnimationFrame(step);
+    }
+
+    function scrollToSection(index) {
+      const target = sections[Math.max(0, Math.min(index, sections.length - 1))];
+      if (!target) return;
+      isLocked = true;
+      const headerHeight = header?.offsetHeight || 64;
+      const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
+      animateTo(Math.max(0, targetTop));
+      window.setTimeout(() => {
+        isLocked = false;
+      }, 50);
+    }
+
+    window.addEventListener("wheel", (event) => {
+      if (!sections.length) return;
+      if (event.target.closest(".reel-showcase")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (Math.abs(event.deltaY) < 10 || isLocked) return;
+
+      wheelBuffer += event.deltaY;
+      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
+      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
+      if (clampedSteps === 0) return;
+      wheelBuffer = 0;
+
+      const nextIndex = getCurrentIndex() + clampedSteps;
+      if (nextIndex < 0 || nextIndex >= sections.length) return;
+      scrollToSection(nextIndex);
+    }, { capture: true, passive: false });
+  })();
+</script>
 </body>
 </html>

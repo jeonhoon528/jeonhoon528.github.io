@@ -361,6 +361,30 @@
       margin-top: 46px;
     }
 
+    #demo .wrap {
+      position: relative;
+    }
+
+    #demo .center-action {
+      position: absolute;
+      top: 30px;
+      right: 0;
+      z-index: 3;
+      margin-top: 0;
+    }
+
+    #demo .video-card[data-video="MRmu8VdbMWo"] {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      #demo .center-action {
+        position: static;
+        justify-content: center;
+        margin-top: 32px;
+      }
+    }
+
     .center-action .button {
       height: 50px;
       min-width: 220px;
@@ -2552,6 +2576,9 @@
       .map((selector) => document.querySelector(selector))
       .filter(Boolean);
     let isSectionSnapping = false;
+    const wheelStepSize = 180;
+    const maxStepPerWheel = 2;
+    let wheelBuffer = 0;
 
     function syncActiveNav() {
       if (!navLinks.length || !navSections.length) return;
@@ -2588,17 +2615,37 @@
       }, null)?.index ?? 0;
     }
 
+    function animateScrollTo(targetTop, duration = 320) {
+      if (animateScrollTo.frameId) {
+        cancelAnimationFrame(animateScrollTo.frameId);
+      }
+      const startTop = window.scrollY;
+      const distance = targetTop - startTop;
+      const startTime = performance.now();
+      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+      function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
+        if (progress < 1) {
+          animateScrollTo.frameId = requestAnimationFrame(step);
+        }
+      }
+
+      animateScrollTo.frameId = requestAnimationFrame(step);
+    }
+
     function scrollToSnapSection(index) {
       const target = snapSections[Math.max(0, Math.min(index, snapSections.length - 1))];
       if (!target) return;
       isSectionSnapping = true;
       const headerHeight = header?.offsetHeight || 64;
       const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-      window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+      animateScrollTo(Math.max(0, targetTop));
       window.setTimeout(() => {
         isSectionSnapping = false;
         syncActiveNav();
-      }, 760);
+      }, 50);
     }
 
     window.addEventListener("wheel", (event) => {
@@ -2609,8 +2656,17 @@
         return;
       }
 
+      wheelBuffer += event.deltaY;
+      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
+      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
+      if (clampedSteps === 0) {
+        event.preventDefault();
+        return;
+      }
+      wheelBuffer = 0;
+
       const currentIndex = getCurrentSnapIndex();
-      const nextIndex = currentIndex + (event.deltaY > 0 ? 1 : -1);
+      const nextIndex = currentIndex + clampedSteps;
       if (nextIndex < 0 || nextIndex >= snapSections.length) {
         return;
       }
@@ -2668,6 +2724,7 @@
       "ouDMPZsXMMk",
       "q8ia_bmtQbk",
       "UOyXOPzXLCk",
+      "wfXeLCVM1jU",
       "F3lNKCKbV18",
       "vhVLFamdRqc",
       "UYjxlb0pB0E",
@@ -2675,6 +2732,17 @@
       "ifJN6Ghp5Pw",
       "4j5Bgcllyqs"
     ]);
+
+    const starRailDemoGrid = document.querySelector("#demo > .wrap > .reel-grid:not(.legacy-portfolio)");
+    const vivyDemoCard = starRailDemoGrid?.querySelector(".video-card[data-video='F3lNKCKbV18']");
+    if (starRailDemoGrid && vivyDemoCard && !starRailDemoGrid.querySelector(".video-card[data-video='wfXeLCVM1jU']")) {
+      vivyDemoCard.insertAdjacentHTML("beforebegin", `
+        <article class="video-card" tabindex="0" role="button" data-video="wfXeLCVM1jU" data-title="스타레일 스킬 리디자인" data-tags="2026.06,SFX,Synthesizing,SubCulture" data-description="- Kilohearts - Phase Plant 모듈식 신디사이저를 적극 활용한 리디자인&#10;- 기존 신디를 활용한 디자인 포트폴리오가 없어서 적극적으로 활용하여 작업 진행." data-link="https://youtu.be/j4POSc1YeAo?si=RXFOkn2fnAjXl6Lb">
+          <div class="video-frame"><img src="https://img.youtube.com/vi/wfXeLCVM1jU/hqdefault.jpg" alt="스타레일 스킬 리디자인"></div>
+          <div class="video-meta"><strong>스타레일 스킬 리디자인</strong><div class="card-tags"><span>2026.06</span><span>SFX</span><span>Synthesizing</span><span>SubCulture</span></div></div>
+        </article>
+      `);
+    }
 
     document.querySelectorAll("#demo > .wrap > .reel-grid:not(.legacy-portfolio) .video-card[data-video]").forEach((card) => {
       card.classList.toggle("is-featured", featuredVideoIds.has(card.dataset.video));
@@ -2710,6 +2778,15 @@
         reelTags.appendChild(tagEl);
       });
       reelDescription.textContent = card.dataset.description || "";
+      if (card.dataset.link) {
+        const link = document.createElement("a");
+        link.href = card.dataset.link;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = card.dataset.link;
+        reelDescription.appendChild(document.createTextNode("\n학습에 도움이 된 링크: "));
+        reelDescription.appendChild(link);
+      }
       reelFrame.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" title="${card.dataset.title || "Demo reel"}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
       reelShowcase.classList.remove("is-closing");
       reelShowcase.classList.add("is-open");
