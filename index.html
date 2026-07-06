@@ -2681,13 +2681,6 @@
     const navSections = navLinks
       .map((link) => document.querySelector(link.getAttribute("href")))
       .filter(Boolean);
-    const snapSections = ["#demo", "#projects", "#learning", "#about", "#creative-stack"]
-      .map((selector) => document.querySelector(selector))
-      .filter(Boolean);
-    let targetSnapIndex = null;
-    const wheelStepSize = 72;
-    const maxStepPerWheel = 2;
-    let wheelBuffer = 0;
 
     function syncActiveNav() {
       if (!navLinks.length || !navSections.length) return;
@@ -2712,76 +2705,6 @@
 
     syncActiveNav();
     window.addEventListener("scroll", syncActiveNav, { passive: true });
-
-    function getCurrentSnapIndex() {
-      return snapSections.reduce((active, section, index) => {
-        const rect = section.getBoundingClientRect();
-        const distance = Math.abs(rect.top - 72);
-        if (!active || distance < active.distance) {
-          return { index, distance };
-        }
-        return active;
-      }, null)?.index ?? 0;
-    }
-
-    function animateScrollTo(targetTop, duration = 140) {
-      if (animateScrollTo.frameId) {
-        cancelAnimationFrame(animateScrollTo.frameId);
-      }
-      const startTop = window.scrollY;
-      const distance = targetTop - startTop;
-      const startTime = performance.now();
-      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-      function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
-        if (progress < 1) {
-          animateScrollTo.frameId = requestAnimationFrame(step);
-        }
-      }
-
-      animateScrollTo.frameId = requestAnimationFrame(step);
-    }
-
-    function scrollToSnapSection(index) {
-      targetSnapIndex = Math.max(0, Math.min(index, snapSections.length - 1));
-      const target = snapSections[targetSnapIndex];
-      if (!target) return;
-      const headerHeight = header?.offsetHeight || 64;
-      const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-      animateScrollTo(Math.max(0, targetTop));
-      window.setTimeout(() => {
-        targetSnapIndex = null;
-        syncActiveNav();
-      }, 160);
-    }
-
-    window.addEventListener("wheel", (event) => {
-      if (!snapSections.length) return;
-      if (event.target.closest(".career-panel, .reel-showcase")) return;
-      if (Math.abs(event.deltaY) < 10) {
-        event.preventDefault();
-        return;
-      }
-
-      wheelBuffer += event.deltaY;
-      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
-      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
-      if (clampedSteps === 0) {
-        event.preventDefault();
-        return;
-      }
-      wheelBuffer = 0;
-
-      const currentIndex = targetSnapIndex ?? getCurrentSnapIndex();
-      const nextIndex = currentIndex + clampedSteps;
-      if (nextIndex < 0 || nextIndex >= snapSections.length) {
-        return;
-      }
-      event.preventDefault();
-      scrollToSnapSection(nextIndex);
-    }, { passive: false });
 
     const reelFrame = document.querySelector("#reel-panel-frame");
     const reelTitle = document.querySelector("#reel-panel-title");

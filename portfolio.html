@@ -1062,30 +1062,6 @@
 
     const navLinks = Array.from(document.querySelectorAll(".nav-links a"));
     const portfolioSections = Array.from(document.querySelectorAll(".portfolio-section:not([hidden])"));
-    let targetSectionIndex = null;
-    const wheelStepSize = 72;
-    const maxStepPerWheel = 2;
-    let wheelBuffer = 0;
-
-    function animateScrollTo(targetTop, duration = 140) {
-      if (animateScrollTo.frameId) {
-        cancelAnimationFrame(animateScrollTo.frameId);
-      }
-      const startTop = window.scrollY;
-      const distance = targetTop - startTop;
-      const startTime = performance.now();
-      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-      function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        window.scrollTo(0, startTop + distance * easeOutCubic(progress));
-        if (progress < 1) {
-          animateScrollTo.frameId = requestAnimationFrame(step);
-        }
-      }
-
-      animateScrollTo.frameId = requestAnimationFrame(step);
-    }
 
     const recentGrid = document.querySelector("#personal-2022-2026 .reel-grid");
     const valhallaCard = document.querySelector("#personal-2016-2022 .video-card[data-video='ouDMPZsXMMk']");
@@ -1158,57 +1134,6 @@
 
     syncActiveNav();
     window.addEventListener("scroll", syncActiveNav, { passive: true });
-
-    function getCurrentSectionIndex() {
-      return portfolioSections.reduce((active, section, index) => {
-        const rect = section.getBoundingClientRect();
-        const distance = Math.abs(rect.top - 72);
-        if (!active || distance < active.distance) {
-          return { index, distance };
-        }
-        return active;
-      }, null)?.index ?? 0;
-    }
-
-    function scrollToPortfolioSection(index) {
-      targetSectionIndex = Math.max(0, Math.min(index, portfolioSections.length - 1));
-      const target = portfolioSections[targetSectionIndex];
-      if (!target) return;
-      const headerHeight = header?.offsetHeight || 64;
-      const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
-      animateScrollTo(Math.max(0, targetTop));
-      window.setTimeout(() => {
-        targetSectionIndex = null;
-        syncActiveNav();
-      }, 160);
-    }
-
-    window.addEventListener("wheel", (event) => {
-      if (!portfolioSections.length) return;
-      if (event.target.closest(".reel-showcase")) return;
-      if (Math.abs(event.deltaY) < 10) {
-        event.preventDefault();
-        return;
-      }
-
-      wheelBuffer += event.deltaY;
-      const rawSteps = Math.trunc(wheelBuffer / wheelStepSize);
-      const clampedSteps = Math.max(-maxStepPerWheel, Math.min(maxStepPerWheel, rawSteps));
-      if (clampedSteps === 0) {
-        event.preventDefault();
-        return;
-      }
-      wheelBuffer = 0;
-
-      const currentIndex = targetSectionIndex ?? getCurrentSectionIndex();
-      const nextIndex = currentIndex + clampedSteps;
-      if (nextIndex < 0 || nextIndex >= portfolioSections.length) {
-        return;
-      }
-
-      event.preventDefault();
-      scrollToPortfolioSection(nextIndex);
-    }, { passive: false });
   </script>
 </body>
 </html>
