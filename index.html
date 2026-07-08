@@ -2641,7 +2641,7 @@
         <h3>Resources</h3>
         <div class="footer-links">
                         <a href="portfolio.html">포트폴리오</a>
-                        <a href="index.html#demo">경력기술서</a>
+                        <a href="index.html?career=profile&shortcut=career-modal#projects">경력기술서</a>
         </div>
       </div>
       <div>
@@ -2834,22 +2834,6 @@
       reelShowcase.setAttribute("aria-hidden", "true");
     }
 
-    function openCareer() {
-      careerShowcase.classList.remove("is-closing");
-      careerShowcase.classList.add("is-open");
-      careerShowcase.setAttribute("aria-hidden", "false");
-      careerShowcase.scrollIntoView({ behavior: "smooth", block: "start" });
-      careerClose.focus();
-    }
-
-    function closeCareer() {
-      if (!careerShowcase.classList.contains("is-open")) return;
-      careerShowcase.classList.remove("is-open");
-      careerShowcase.classList.add("is-closing");
-      careerShowcase.setAttribute("aria-hidden", "true");
-      document.body.style.overflow = "";
-    }
-
     document.querySelectorAll(".video-card[data-video]").forEach((card) => {
       card.addEventListener("click", () => openReel(card));
       card.addEventListener("keydown", (event) => {
@@ -2869,54 +2853,9 @@
       }
     });
 
-careerTrigger.addEventListener("click", openCareer);
-if (careerShowcase) {
-    careerShowcase.style.display = "none";
-}
-
-function openCareer() {
-    if (!careerShowcase) {
-        return;
-    }
-    careerShowcase.style.display = "block";
-    careerShowcase.style.position = "fixed";
-    careerShowcase.style.left = "50%";
-    careerShowcase.style.top = "50%";
-    careerShowcase.style.transform = "translate(-50%, -50%)";
-    careerShowcase.style.width = "min(92vw, 1320px)";
-    careerShowcase.style.maxHeight = "88vh";
-    careerShowcase.style.overflow = "auto";
-    careerShowcase.style.zIndex = "1200";
-    careerShowcase.style.background = "rgba(0, 8, 22, 0.96)";
-    careerShowcase.style.backdropFilter = "blur(6px)";
-    careerShowcase.style.webkitBackdropFilter = "blur(6px)";
-    careerShowcase.style.boxShadow = "0 24px 60px rgba(0, 0, 0, 0.35)";
-    careerShowcase.style.border = "1px solid rgba(217, 217, 217, 0.12)";
-    careerShowcase.style.borderRadius = "18px";
-    careerShowcase.classList.add("is-open");
-}
-
-function closeCareer() {
-    if (!careerShowcase) {
-        return;
-    }
-    careerShowcase.classList.remove("is-open");
-    careerShowcase.style.display = "none";
-    document.body.style.overflow = "";
-}
-    careerClose.addEventListener("click", closeCareer);
-    careerShowcase.addEventListener("animationend", () => {
-      if (careerShowcase.classList.contains("is-closing")) {
-        careerShowcase.classList.remove("is-closing");
-      }
-    });
-
     window.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && reelShowcase.classList.contains("is-open")) {
         closeReel();
-      }
-      if (event.key === "Escape" && careerShowcase.classList.contains("is-open")) {
-        closeCareer();
       }
     });
 
@@ -2941,68 +2880,6 @@ function closeCareer() {
       card.addEventListener("mouseleave", showEnglish);
       card.addEventListener("focusout", showEnglish);
     });
-</script>
-<script>
-(() => {
-    const careerShowcase = document.querySelector("#career-showcase");
-    const careerTrigger = document.querySelector(".career-trigger");
-    const careerClose = document.querySelector(".career-close");
-    const careerTriggerFresh = careerTrigger ? careerTrigger.cloneNode(true) : null;
-    const careerCloseFresh = careerClose ? careerClose.cloneNode(true) : null;
-
-    if (!careerShowcase) {
-        return;
-    }
-
-    if (careerTriggerFresh && careerTrigger?.parentNode) {
-        careerTrigger.parentNode.replaceChild(careerTriggerFresh, careerTrigger);
-    }
-    if (careerCloseFresh && careerClose?.parentNode) {
-        careerClose.parentNode.replaceChild(careerCloseFresh, careerClose);
-    }
-
-    function openCareerModal(event) {
-        if (event) {
-            event.preventDefault();
-        }
-        careerShowcase.style.display = "";
-        careerShowcase.classList.remove("is-closing");
-        careerShowcase.classList.add("is-open");
-        careerShowcase.setAttribute("aria-hidden", "false");
-        careerCloseFresh?.focus();
-    }
-
-    function closeCareerModal() {
-        if (!careerShowcase.classList.contains("is-open")) {
-            return;
-        }
-        careerShowcase.classList.remove("is-open");
-        careerShowcase.classList.add("is-closing");
-        careerShowcase.setAttribute("aria-hidden", "true");
-    }
-
-    if (careerTriggerFresh) {
-        careerTriggerFresh.addEventListener("click", openCareerModal);
-    }
-    if (careerCloseFresh) {
-        careerCloseFresh.addEventListener("click", closeCareerModal);
-    }
-    careerShowcase.addEventListener("click", (event) => {
-        if (event.target === careerShowcase) {
-            closeCareerModal();
-        }
-    });
-    careerShowcase.addEventListener("animationend", () => {
-        if (careerShowcase.classList.contains("is-closing")) {
-            careerShowcase.classList.remove("is-closing");
-        }
-    });
-    window.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-            closeCareerModal();
-        }
-    });
-})();
 </script>
 <script>
 (() => {
@@ -3198,6 +3075,9 @@ function closeCareer() {
   }
 
   function markOpen() {
+    careerShowcase.classList.remove("is-closing");
+    careerShowcase.classList.add("is-open");
+    careerShowcase.setAttribute("aria-hidden", "false");
     document.body.classList.add("career-modal-open");
     careerPanel.scrollTop = 0;
     closeButton?.focus();
