@@ -3111,6 +3111,13 @@
     }, 120);
   }
 
+  document.querySelectorAll('a[href*="career=profile"]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      markOpen();
+    });
+  });
+
   closeButton?.addEventListener("click", closeCareer);
 
   careerShowcase.addEventListener("click", (event) => {
