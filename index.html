@@ -3123,6 +3123,7 @@
 
   careerShowcase.addEventListener("animationend", () => {
     if (careerShowcase.classList.contains("is-closing")) {
+      careerShowcase.classList.remove("is-closing");
       document.body.classList.remove("career-modal-open");
     }
   });
